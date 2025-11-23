@@ -1,4 +1,6 @@
 streamlit==1.40.2
 langchain
 langchain-openai
+langgraph
+langgraph-checkpoint-sqlite
 python-dotenv

@@ -1,18 +1,22 @@
 import streamlit as st
-from components import display_chat_history, handle_chat_input
+from frontend.components import display_chat_history, handle_chat_input, display_chat_list_sidebar, render_chat_interface
+from frontend.helper import init_st_session_state
 
 # Page config
-st.set_page_config(page_title="Simple Chatbot", page_icon="💬")
+def main():
+    ### Initialize st.session_state
+    init_st_session_state()
 
-# Title
-st.title("💬 Simple Chatbot")
+    st.set_page_config(page_title="Simple Chatbot", page_icon="💬", layout="wide")
+    display_chat_list_sidebar()
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    # Title
+    st.title("💬 Simple Chatbot")
 
-# Display chat messages
-display_chat_history()
+    # Display chat messages for selected thread
+    # display_chat_history()
+    # handle_chat_input()
+    render_chat_interface()
 
-# Chat input
-handle_chat_input()
+if __name__ == "__main__":
+    main()
