@@ -9,7 +9,7 @@ import sqlite3
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.checkpoint.memory import MemorySaver
-from common_assets.config import checkpoint_sqlitite_loc, dynamodb_table_name, default_user_id
+from common_assets.config import d_chat_modes_graph, checkpoint_sqlitite_loc, default_user_id
 
 from backend.utils import save_thread_metadata, get_user_threads, delete_user_threads, get_thread_details
 from .state import GraphState
@@ -21,7 +21,12 @@ class ChatBotGraph:
         self.user_id = user_id
         self.checkpointer = self.get_checkpointer()
         self.graph = self.get_graph()
-        print('New Graph Object created')
+        
+        # self.d_graph = {}
+        # for chat_mode in d_chat_modes_graph.keys():
+        #     graph_fn = d_chat_modes_graph[chat_mode]['graph_fn']
+        #     self.d_graph[chat_mode] = self.add_checkpointer_to_graph(graph_fn=graph_fn)
+
 
     def get_checkpointer(self):
         # Use direct sqlite3 connection instead of from_conn_string()
@@ -35,26 +40,6 @@ class ChatBotGraph:
         # Get thread IDs from DynamoDB for the current user
         thread_ids = get_user_threads(self.user_id)
         return thread_ids
-
-        # Legacy SQLite/MemorySaver logic - commented out but kept for reference
-        # if isinstance(self.checkpointer, SqliteSaver):
-        #     # SQLite-specific logic (e.g., direct SQL query)
-        #     try:
-        #         cursor = self.checkpointer.conn.execute(
-        #             "SELECT DISTINCT thread_id FROM checkpoints"
-        #         )
-        #         thread_ids = set([row[0] for row in cursor.fetchall()])
-        #     except:
-        #         return []
-        # elif isinstance(self.checkpointer, MemorySaver):
-        #     # MemorySaver-specific logic
-        #     thread_ids = set([
-        #         val.config['configurable']['thread_id']
-        #         for val in self.checkpointer.list({})
-        #     ])
-        # else:
-        #     raise AssertionError("Only SqlliteSaver and MemmorySaver checkpointers allowed")
-        # return list(thread_ids)
 
     
     def delete_all_threads(self):
@@ -94,9 +79,11 @@ class ChatBotGraph:
 
     def get_response(self, thread_id, human_message, chat_mode, new_thread ):
         config = {"configurable": {"thread_id": thread_id}}
-        invoke_object = {"last_human_message":human_message}
+        invoke_object = {"chat_mode": chat_mode, "last_human_message":human_message}
         response_state = self.graph.invoke(invoke_object,config )
         response_answer = response_state['messages'][-1].content
+
+        print('CHAT_MODE: ', chat_mode, '\t query: ', human_message)
 
         # Save or update thread metadata in DynamoDB
         # If thread exists, updates update_date; if new, creates with created_date and update_date
@@ -111,27 +98,33 @@ class ChatBotGraph:
         messages = state['messages']
         return {'state':state, 'messages':messages}
     
+
     def get_graph(self):
-        # Create the graph builder with ChatState schema
+        ### Currently there's only 1 state for all subgraphs. Can change it later if required.
         graph_builder = StateGraph(GraphState)
+        
+        for chat_mode in d_chat_modes_graph:
+            chat_mode_subgraphs = d_chat_modes_graph[chat_mode]['graph_fn']().compile()
+            graph_builder.add_node("subgraph_"+chat_mode, chat_mode_subgraphs )
 
-        # Add the chatbot node to the graph
-        graph_builder.add_node("human", human_node)
-        graph_builder.add_node("chatbot", chatbot_node)
+        routing_fn = lambda x:  x['chat_mode'] 
 
-        # Define the edges: START -> chatbot -> END
-        graph_builder.add_edge(START, "human")
-        graph_builder.add_edge("human", "chatbot")
-        graph_builder.add_edge("chatbot", END)
+        graph_builder.add_conditional_edges(START, routing_fn, {chat_mode: 'subgraph_'+chat_mode for chat_mode in d_chat_modes_graph.keys()})
 
-
-
-
-        # Compile the graph with checkpointing enabled
-        # This allows conversation history to persist across invocations and restarts
         if not hasattr(self,"checkpointer"):
             self.checkpointer =   self.get_checkpointer()
  
-
         graph = graph_builder.compile(checkpointer=self.checkpointer)
         return graph
+
+
+
+    # def add_checkpointer_to_graph(self, graph_fn):
+    #     graph_builder = graph_fn()
+    #     # Compile the graph with checkpointing enabled
+    #     # This allows conversation history to persist across invocations and restarts
+    #     if not hasattr(self,"checkpointer"):
+    #         self.checkpointer =   self.get_checkpointer()
+ 
+    #     graph = graph_builder.compile(checkpointer=self.checkpointer)
+    #     return graph

@@ -2,7 +2,7 @@ import streamlit as st
 from uuid_utils import uuid7
 from backend.langgraph_workflow.graph import ChatBotGraph
 from backend.utils import save_thread_metadata
-from common_assets.config import d_modes_graph, default_user_id, dynamodb_table_name
+from common_assets.config import d_chat_modes_graph, default_user_id, dynamodb_table_name
 
 def create_new_thread(user: str = str(default_user_id)) -> str:
     thread_id = str(uuid7())
@@ -21,4 +21,4 @@ def init_st_session_state():
         else:
             st.session_state.all_thread_details = dict()
     if 'selected_chat_mode' not in st.session_state:
-        st.session_state.selected_chat_mode = list(d_modes_graph.keys())[0]
+        st.session_state.selected_chat_mode = list(d_chat_modes_graph.keys())[0]

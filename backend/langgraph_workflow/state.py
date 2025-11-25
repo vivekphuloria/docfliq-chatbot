@@ -16,6 +16,7 @@ class GraphState(TypedDict):
         messages: List of conversation messages. The add_messages annotation
                  ensures new messages are appended to the list automatically.
     """
+    chat_mode:str
     last_human_message: str
     messages: Annotated[list, add_messages]
 

@@ -9,6 +9,10 @@ from .state import GraphState
 from backend.config import CHATBOT_SYSTEM_PROMPT
 from backend.chains import chain_chat_response
 
+def router_node(state:GraphState)-> Dict[str, Any]:
+    return state
+    
+
 def human_node(state: GraphState)-> Dict[str, Any]:
     return {'messages':HumanMessage(state['last_human_message'])} 
 
@@ -23,3 +27,6 @@ def chatbot_node(state: GraphState) -> dict:
     # The add_messages annotation in ChatState will automatically append it
 
     return {"messages": AIMessage(content=response_content)}
+
+def hello_world_node(state: GraphState)-> Dict[str, Any]:
+    return {'messages':AIMessage(content='Hello World')} 

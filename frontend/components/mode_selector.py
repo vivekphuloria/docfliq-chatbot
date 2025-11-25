@@ -1,6 +1,5 @@
 import streamlit as st
-from common_assets.config import d_modes_graph
-
+from common_assets.config import d_chat_modes_graph
 
 def display_mode_selector():
     """
@@ -10,22 +9,25 @@ def display_mode_selector():
     If new conversation: Show mode selection buttons
     """
     # Get all available modes from config
-    modes = list(d_modes_graph.keys())
+    modes = list(d_chat_modes_graph.keys())
 
     # Check if we're viewing an existing thread
     selected_thread_id = st.session_state.selected_thread_id
     thread_exists = (
         selected_thread_id is not None
-        and selected_thread_id in st.session_state.all_thread_details
+        or selected_thread_id in st.session_state.all_thread_details
     )
 
     if thread_exists:
         # Existing thread: Display mode as header only
+        ### Fetch the mode of the active chat
         active_mode = st.session_state.all_thread_details[selected_thread_id]['chat_mode']
-        st.markdown("### " + active_mode)
+        
+        ### Fetch the display name of the selected mode
+        st.markdown("### " + d_chat_modes_graph[active_mode]['display_name'])
     else:
         # New conversation: Display mode selection buttons
-        active_mode = st.session_state.chat_mode
+        active_mode = st.session_state.selected_chat_mode
         cols = st.columns(len(modes))
 
         for idx, chat_mode in enumerate(modes):
@@ -34,7 +36,7 @@ def display_mode_selector():
 
             # Render mode selection button
             button_clicked = cols[idx].button(
-                chat_mode,
+                label = d_chat_modes_graph[chat_mode]['display_name'],
                 key=f"mode_btn_{chat_mode}",
                 type=button_type,
                 use_container_width=True
@@ -42,5 +44,5 @@ def display_mode_selector():
 
             # Update mode on button click
             if button_clicked:
-                st.session_state.chat_mode = chat_mode
+                st.session_state.selected_chat_mode = chat_mode
                 st.rerun()

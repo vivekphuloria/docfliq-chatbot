@@ -8,8 +8,9 @@ from pathlib import Path
 def display_chat_list_sidebar():
 
     chatbot = st.session_state.chatbot
-    d_list_chats = chatbot.get_sidebar_json()
-    d_list_chats = d_list_chats if type(d_list_chats)==dict else dict()
+    # d_list_chats = chatbot.get_sidebar_json()
+    d_all_chat_json = st.session_state.all_thread_details
+
 
     with st.sidebar:
         st.title("💬 Chats")
@@ -23,6 +24,7 @@ def display_chat_list_sidebar():
         if st.button("🗑️ Delete All Chats", use_container_width=True, type="primary"):
             # Go to an empty chat screen -> Create fresh logic
             chatbot.delete_all_threads()
+            st.rerun()
             st.toast(f"Send message to start new chat")
 
         st.divider()
@@ -31,7 +33,7 @@ def display_chat_list_sidebar():
         # Display list of chats
         st.subheader("Recent Chats")
 
-        for thread_id,thread_info in d_list_chats.items() :
+        for thread_id,thread_info in d_all_chat_json.items() :
             # Chat summary as a single clickable line
             if st.button(
                 thread_info['first_message'],
