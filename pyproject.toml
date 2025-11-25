@@ -14,8 +14,11 @@ dependencies = [
     "langgraph",
     "langgraph-checkpoint-sqlite",
     "python-dotenv",
+    "boto3",
+    "uuid-utils",
+    "uuid7"
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["backend*", "frontend*"]
+include = ["backend*", "frontend*","common_assets*"]

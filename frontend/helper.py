@@ -1,25 +1,24 @@
-from datetime import datetime
 import streamlit as st
+from uuid_utils import uuid7
 from backend.langgraph_workflow.graph import ChatBotGraph
-def create_new_thread(user: str = "VIVEK") -> str:
-    """
-    Create a new thread ID with user and timestamp.
+from backend.utils import save_thread_metadata
+from common_assets.config import d_modes_graph, default_user_id, dynamodb_table_name
 
-    Args:
-        user: Username to include in thread ID (default: "VIVEK")
+def create_new_thread(user: str = str(default_user_id)) -> str:
+    thread_id = str(uuid7())
 
-    Returns:
-        Thread ID in format: chat_<user>_<yyyyMMdd_HHmmss>
-    """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    thread_id = f"chat_{user}_{timestamp}"
     return thread_id
 
 def init_st_session_state():
     if "chatbot" not in st.session_state:
-        chatbot = ChatBotGraph()
+        chatbot = ChatBotGraph(user_id=str(default_user_id))
         st.session_state.chatbot = chatbot
     if "selected_thread_id" not in st.session_state:
         st.session_state.selected_thread_id = None
-    if 'list_messages_to_display' not in st.session_state:
-        st.session_state.list_messages_to_display = []
+    if 'all_thread_details' not in st.session_state:
+        if 'chatbot' in st.session_state:
+            st.session_state.all_thread_details = st.session_state.chatbot.get_sidebar_json()
+        else:
+            st.session_state.all_thread_details = dict()
+    if 'selected_chat_mode' not in st.session_state:
+        st.session_state.selected_chat_mode = list(d_modes_graph.keys())[0]

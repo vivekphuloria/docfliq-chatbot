@@ -9,6 +9,7 @@ def display_chat_list_sidebar():
 
     chatbot = st.session_state.chatbot
     d_list_chats = chatbot.get_sidebar_json()
+    d_list_chats = d_list_chats if type(d_list_chats)==dict else dict()
 
     with st.sidebar:
         st.title("💬 Chats")
@@ -30,10 +31,10 @@ def display_chat_list_sidebar():
         # Display list of chats
         st.subheader("Recent Chats")
 
-        for thread_id,first_message in d_list_chats.items() :
+        for thread_id,thread_info in d_list_chats.items() :
             # Chat summary as a single clickable line
             if st.button(
-                first_message,
+                thread_info['first_message'],
                 key=f"chat_{thread_id}",
                 use_container_width=True
             ):

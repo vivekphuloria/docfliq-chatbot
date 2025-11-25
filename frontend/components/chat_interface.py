@@ -1,6 +1,6 @@
 import streamlit as st
 from frontend.helper import create_new_thread
-
+from common_assets.config import default_user_id
 
 def render_chat_interface():
     """
@@ -11,6 +11,9 @@ def render_chat_interface():
     """
     chatbot = st.session_state.chatbot
     thread_id = st.session_state.selected_thread_id
+
+    ## Only for debugging. 
+    st.json(st.session_state, expanded=False)
 
     # Display existing message history
     _display_message_history(chatbot, thread_id)
@@ -34,8 +37,11 @@ def _handle_new_message(chatbot, thread_id):
     """Handle new user input, get AI response, and display both immediately."""
     if user_input := st.chat_input("Type your message here..."):
         # Create new thread if none selected
+        new_thread = False
         if thread_id is None:
-            thread_id = create_new_thread(user="VIVEK")
+            thread_id = create_new_thread(default_user_id)
+            new_thread = True
+
 
         # Display user message immediately
         _display_user_message(user_input)
@@ -43,7 +49,9 @@ def _handle_new_message(chatbot, thread_id):
         # Get AI response from backend
         ai_response = chatbot.get_response(
             human_message=user_input,
-            thread_id=thread_id
+            thread_id=thread_id,
+            chat_mode=st.session_state.chat_mode,
+            new_thread = new_thread
         )
 
         # Display AI response immediately
